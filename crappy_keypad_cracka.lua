@@ -76,7 +76,7 @@ local function DecodingThink()
     elseif CurEnt:GetStatus() == 1 then
         LocalPlayer():ChatPrint("Found code: " .. LastCode)
 
-        LocalPlayer():ChatPrint("It took " .. os.date("%H hours, %M minutes, %S seconds", 82800 + (os.time() - StartTime) * game.GetTimeScale()) .. " to find the code!")
+        LocalPlayer():ChatPrint("It took " .. os.date("%H hours, %M minutes, %S seconds", 82800 + os.time() - StartTime) .. " to find the code!")
 
         CurEnt.CSCode = LastCode
 
