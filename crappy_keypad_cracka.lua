@@ -1,3 +1,4 @@
+-- cringe
 local NextCheck = CurTime()
 
 local DigitCheck = CurTime()
@@ -14,6 +15,8 @@ local curdigit = 0
 
 local StartTime = nil
 
+-- we cant enter a 4 digit pin code at once so we send all the digits separately to the keypad
+-- the code is prolly pretty shit, i went a little crazy over trying to make this
 local function EnterDigits(ent, code)
     if DigitCheck <= CurTime() then
 
@@ -28,13 +31,13 @@ local function EnterDigits(ent, code)
         local digit = string.sub(tostring(code), curdigit, curdigit)
 
         net.Start("Keypad")
-            net.WriteEntity(ent)
-            net.WriteInt(0, 4)
-            net.WriteUInt(digit, 8)
+            net.WriteEntity(ent)-- this keypad
+            net.WriteInt(0, 4)-- mode: enter combo
+            net.WriteUInt(digit, 8)-- send digit
         net.SendToServer()
 
 
-        DigitCheck = CurTime() + 0.05
+        DigitCheck = CurTime() + 0.05 -- 0.05 is the delay between commands server side for the keypad
     end
 end
 
@@ -45,18 +48,18 @@ local function DecodingThink()
         hook.Remove("Tick", "DecodingThink")
     end
 
-    if CurEnt:GetStatus() == 0 and NextCheck <= CurTime() then
+    if CurEnt:GetStatus() == 0 and NextCheck <= CurTime() then -- if keypad doin nothing do our combo guessing game
         if Checking then return end
 
         local thing = EnterDigits(CurEnt, TestCode)
 
-        if thing == true then
+        if thing == true then -- wait for a result from the digits department before moving on
             LocalPlayer():ChatPrint("Trying code \"" .. TestCode .. "\"")
             Checking = true
 
             net.Start("Keypad")
                 net.WriteEntity(CurEnt)
-                net.WriteInt(1, 4)
+                net.WriteInt(1, 4) -- accepted input code and wait for result
             net.SendToServer()
 
             LastCode = TestCode
@@ -73,10 +76,10 @@ local function DecodingThink()
         else
             return
         end
-    elseif CurEnt:GetStatus() == 1 then
+    elseif CurEnt:GetStatus() == 1 then -- status 1 == access granted
         LocalPlayer():ChatPrint("Found code: " .. LastCode)
 
-        LocalPlayer():ChatPrint("It took " .. os.date("%H hours, %M minutes, %S seconds", 82800 + os.time() - StartTime) .. " to find the code!")
+        LocalPlayer():ChatPrint("It took " .. os.date("%H hours, %M minutes, %S seconds", 82800 + os.time() - StartTime) .. " to find the code!") -- if ur a mad man wait the entire time for a 4 digit code to be guessed
 
         CurEnt.CSCode = LastCode
 
@@ -114,12 +117,12 @@ concommand.Add("CrackMeh", function()
     local tr = LocalPlayer():GetEyeTrace()
 
     if tr.Entity and tr.Entity:GetClass() == "Keypad" then
-        if tr.Entity.CSCode then
+        if tr.Entity.CSCode then -- when a code is guessed it gets saved onto the keypad clientside for later entering
             CurEnt = tr.Entity
             TestCode = tr.Entity.CSCode
             hook.Add("Tick", "StartDigitEnter", StartDigitEnter)
         else
-            StartDecoding(tr.Entity)
+            StartDecoding(tr.Entity) -- start decoding if there is no code saved
         end
     end
 end)
